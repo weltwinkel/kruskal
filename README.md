@@ -1,5 +1,7 @@
 # kruskal
 
+Very basic implementation of the kruskal algorithm in JavaScript.
+
 Initialize using:
 
 	k = new kruskal({
