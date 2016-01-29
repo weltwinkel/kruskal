@@ -1,8 +1,8 @@
-var kruskal = function(params,callback){
+var kruskal = function(params,callback){console.time("start");
 	var k = this; // get instance
 	
 	k.nodelist = []; // nodelist
-	k.callback = callback;
+	k.callback = callback; // callback function to execute after completion
 	k.edges = []; // edgelist
 	k.keepedges = []; // edges that we want to keep
 	
@@ -14,7 +14,7 @@ var kruskal = function(params,callback){
 	// sort edges by length
 	k.sort_edges();
 	
-	// run
+	// run algorithm
 	k.get_edge();
 };
 
@@ -23,7 +23,7 @@ kruskal.prototype = {
 	sort_edges : function(){
 		var k = this; // get instance
 		k.edges.sort(function(a,b){
-			return b.length - a.length; // sort edges in ascending order (so smallest can be removed with pop() )
+			return b.length - a.length; // sort edges in descending order (so smallest can be removed with pop() )
 			});
 	},
 	
@@ -42,37 +42,37 @@ kruskal.prototype = {
 			if(typeof(k.callback) == "function"){
 				k.callback( result ); // call callback function and pass result
 			}
-			
-			k.draw();
 		}
 	},
 	
 	test_edge : function(edge){
 	
 		var k = this; // get instance
+		var current_edges = k.keepedges; // get array of current edges
+		var new_edge,found_1,found_2,found;
 		
 		if(k.keepedges.length == 0){ // add first edge
 			k.keepedges.push(edge);
 		}else{
 			// check against other edges
-			var found_1 = [];
-			var found_2 = [];
-			var found = false;
+			found_1 = [], found_2 = [];
+			var found = false; // default value
 			
 			k.keepedges.forEach(function(keepedge){
-					if(keepedge.nodelist.indexOf(edge.connecting[0]) != -1 && keepedge.nodelist.indexOf(edge.connecting[1]) != -1){
+					if(keepedge.nodelist.indexOf(edge.connecting[0]) > -1 && keepedge.nodelist.indexOf(edge.connecting[1]) > -1){
 						// both nodes are already in edge!!
 						found = true; // set found to true
-					}else if(keepedge.nodelist.indexOf(edge.connecting[0]) != -1){
+					}else if(keepedge.nodelist.indexOf(edge.connecting[0]) > -1){
 						// first node found!
 						found_1.push(keepedge);
-					}else if(keepedge.nodelist.indexOf(edge.connecting[1]) != -1){
+					}else if(keepedge.nodelist.indexOf(edge.connecting[1]) > -1){
 						// second node found
 						found_2.push(keepedge);
 					}
 				});
 				
 			if(found == false && found_1.length == 0 && found_2.length == 0){ // edge is good to go
+				new_edge = edge;
 				k.keepedges.push(edge); // add edge
 			}else if(found == false){ // 
 			
@@ -84,52 +84,52 @@ kruskal.prototype = {
 						keepedge.nodelist.push(edge.connecting[1]); // update edge with node 2
 					});
 					
+				new_edge = edge;
 				k.keepedges.push(edge); // add edge
 			}
 		}
-		// clean edges (remove edges where one nodeset contains another)
-		k.clean_edgelist();
 		
-		// get next edge
-		k.get_edge();
+		if(found == false){ // new edge was added -> clean list
+			k.clean_edgelist(current_edges,new_edge);
+		}else{
+			k.get_edge(); // get next edge
+			}
 	},
 	
-	clean_edgelist : function(){
+	clean_edgelist : function(old_edges,new_edge){
 
 		var k = this; // get instance
-
-		// loop edges
-		k.keepedges.forEach(function(e1,i){
-			k.keepedges.forEach(function(e2){
-				if(e1.id != e2.id){ // edges are not the same -> check for overlap
-					
-					// check for overlap
-					var result = [e1.nodelist,e2.nodelist].shift().filter(function(v) {
-						return [e1.nodelist,e2.nodelist].every(function(a) {
-							return a.indexOf(v) !== -1;
-						});
-					});
-				
-					if(result.length > 1){ // more then 2 nodes are the same array -> concat arrays and get unique values!
-						e1.nodelist = e1.nodelist.concat(e2.nodelist); // concat arrays
-						e1.nodelist = k.uniq( e1.nodelist ); // delete duplicates
-
-
-						e2.nodelist = e2.nodelist.concat(e1.nodelist); // concat arrays
-						e2.nodelist = k.uniq( e2.nodelist ); // delete duplicates
-						}
-					}
-				});
+		var n1_tmp,n2_tmp,count; // define vars used in loop
+		
+		// loop edges (excluding last)
+		old_edges.forEach(function(check_edge){
+		
+			n1_tmp  = []; // <- nodes that are contained in new_edge but NOT check_edge
+			n2_tmp  = []; // <- nodes that are contained in check_edge but NOT new_edge
+			count = 0; // count overlapping nodes between new_edge and check_edge
+			
+			// check for overlap
+			new_edge.nodelist.forEach(function(n1){
+				if(check_edge.nodelist.indexOf(n1) > -1){ // n2 contains n1
+					count++;
+				}else{ // n2 does not contain n1
+					n2_tmp.push(n1);
+				}
 			});
-	},
-	
-	uniq(a) {
-		var result = [];
-		a.forEach(function(item) {
-			 if(result.indexOf(item) < 0) {
-				 result.push(item);
-			 }
-		});
-		return result;
+			
+			if(count > 1){ // join both edges!!
+			
+				check_edge.nodelist.forEach(function(n2){
+					if(new_edge.nodelist.indexOf(n2) == -1){ // n1 does not contain n2
+						n1_tmp.push(n2);
+						}
+					});
+
+				new_edge.nodelist = new_edge.nodelist.concat(n1_tmp); // concat with differences from check_edge
+				check_edge.nodelist = check_edge.nodelist.concat(n2_tmp); // concat with differences from new_edge
+				}
+			});
+			
+		k.get_edge(); // get next edge
 	}
 };
