@@ -1,4 +1,4 @@
-var kruskal = function(params,callback){
+var kruskal = function(params,callback){console.time("start");
 	var k = this; // get instance
 	
 	k.nodelist = []; // nodelist
@@ -13,9 +13,13 @@ var kruskal = function(params,callback){
 		
 	// sort edges by length
 	k.sort_edges();
+
+	var edges = k.edges.length; // get total number of edges
 	
-	// run algorithm
-	k.get_edge();
+	// loop all edges
+	for(var i = 0; i < edges; i++){
+		k.test_edge(); // check every edge
+		}
 };
 
 kruskal.prototype = {
@@ -27,27 +31,24 @@ kruskal.prototype = {
 			});
 	},
 	
-	get_edge : function(){
+	finished : function(){
 		
 		var k = this; // get instance
-		if(k.edges.length > 0){ // check current edge
-			k.test_edge( k.edges.pop() );
-		}else{ // no more edges left -> finished!!!
-		
-			var result = [];
-			k.keepedges.forEach(function(edge){
-				result.push(edge.connecting);
-				});
-		
-			if(typeof(k.callback) == "function"){
-				k.callback( result ); // call callback function and pass result
-			}
+
+		var result = [];
+		k.keepedges.forEach(function(edge){
+			result.push(edge.connecting);
+			});
+	
+		if(typeof(k.callback) == "function"){
+			k.callback( result ); // call callback function and pass result
 		}
 	},
 	
-	test_edge : function(edge){
+	test_edge : function(){
 	
 		var k = this; // get instance
+		var edge = k.edges.pop();
 		var current_edges = k.keepedges; // get array of current edges
 		var new_edge,found_1,found_2,found;
 		
@@ -91,8 +92,10 @@ kruskal.prototype = {
 		
 		if(found == false){ // new edge was added -> clean list
 			k.clean_edgelist(current_edges,new_edge);
-		}else{
-			k.get_edge(); // get next edge
+		}
+		
+		if(k.edges.length == 0){
+			k.finished(); // execution completed
 			}
 	},
 	
@@ -100,10 +103,10 @@ kruskal.prototype = {
 
 		var k = this; // get instance
 		var n1_tmp,n2_tmp,count; // define vars used in loop
-		
+	
 		// loop edges (excluding last)
 		old_edges.forEach(function(check_edge){
-		
+			
 			n1_tmp  = []; // <- nodes that are contained in new_edge but NOT check_edge
 			n2_tmp  = []; // <- nodes that are contained in check_edge but NOT new_edge
 			count = 0; // count overlapping nodes between new_edge and check_edge
@@ -129,7 +132,5 @@ kruskal.prototype = {
 				check_edge.nodelist = check_edge.nodelist.concat(n2_tmp); // concat with differences from new_edge
 				}
 			});
-			
-		k.get_edge(); // get next edge
 	}
 };
