@@ -1,4 +1,4 @@
-var kruskal = function(params,callback){console.time("start");
+var kruskal = function(params,callback){
 	var k = this; // get instance
 	
 	k.nodelist = []; // nodelist
